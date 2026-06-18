@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+pandas
+numpy
+scikit-learn
+xgboost
+shap
+joblib
+langchain
+langchain-groq
+langgraph
+python-dotenv
+pydantic
+langchain-community
