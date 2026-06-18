@@ -3,7 +3,7 @@ import { BarChart, Bar, PieChart, Pie, Cell,
          XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import axios from 'axios';
 
-const API = 'http://127.0.0.1:8000';
+const API = 'const API = 'https://hr-attrition-ai-backend.onrender.com';
 const COLORS = ['#ef4444', '#f97316', '#22c55e'];
 
 function StatCard({ title, value, subtitle, color }) {
