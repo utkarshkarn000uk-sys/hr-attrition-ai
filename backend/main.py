@@ -36,14 +36,14 @@ df['RiskLevel'] = pd.cut(df['RiskScore'],
 print("Risk scores calculated for all employees!")
 
 # ── FastAPI ───────────────────────────────────────────────────
-app = FastAPI(title="HR AttritionAI API")
+from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_methods=["*"],
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
-    allow_credentials=True,
 )
 # ── Routes ────────────────────────────────────────────────────
 @app.get("/")
