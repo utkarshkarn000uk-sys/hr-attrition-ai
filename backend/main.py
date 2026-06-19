@@ -16,6 +16,20 @@ from langgraph.graph.message import add_messages
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.prebuilt import ToolNode
 from langchain_core.messages import SystemMessage
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# ── FastAPI app FIRST ─────────────────────────────────────────
+app = FastAPI(title="HR AttritionAI API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+)
 
 # ── Load ML model and data ────────────────────────────────────
 print("Loading ML model...")
@@ -26,7 +40,6 @@ explainer = joblib.load("shap_explainer.pkl")
 df = pd.read_csv("employees.csv")
 print(f"Loaded {len(df)} employees")
 
-# ── Add risk scores ───────────────────────────────────────────
 df_features = df[feature_names]
 all_probs = model.predict_proba(df_features)[:,1]
 df['RiskScore'] = (all_probs * 100).round(1)
@@ -35,16 +48,6 @@ df['RiskLevel'] = pd.cut(df['RiskScore'],
                           labels=['Low','Medium','High'])
 print("Risk scores calculated for all employees!")
 
-# ── FastAPI ───────────────────────────────────────────────────
-from fastapi.middleware.cors import CORSMiddleware
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
-)
 # ── Routes ────────────────────────────────────────────────────
 @app.get("/")
 def home():
@@ -87,7 +90,7 @@ def get_shap(employee_id: int):
     raw_shap = explainer.shap_values(
         employee_features.values.reshape(1, -1)
     )
-    shap_vals = raw_shap[0]  # shape (15,)
+    shap_vals = raw_shap[0]
 
     shap_data = []
     for i in range(len(feature_names)):
@@ -156,8 +159,6 @@ def predict(req: PredictRequest):
     }
 
 # ── LangGraph Chatbot ─────────────────────────────────────────
-from dotenv import load_dotenv
-load_dotenv()
 llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.7)
 
 @tool
@@ -215,33 +216,4 @@ def should_continue(state: ChatState) -> str:
     return END
 
 builder = StateGraph(ChatState)
-builder.add_node("agent", agent_node)
-builder.add_node("tools", tool_node)
-builder.add_edge(START, "agent")
-builder.add_conditional_edges("agent", should_continue)
-builder.add_edge("tools", "agent")
-
-checkpointer = InMemorySaver()
-graph = builder.compile(checkpointer=checkpointer)
-
-class ChatRequest(BaseModel):
-    message: str
-    session_id: str = "default"
-
-@app.post("/chat")
-async def chat(req: ChatRequest):
-    config = {"configurable": {"thread_id": req.session_id}}
-
-    async def stream_response():
-        async for event in graph.astream_events(
-            {"messages": [("user", req.message)]},
-            config=config,
-            version="v2"
-        ):
-            if event["event"] == "on_chat_model_stream":
-                chunk = event["data"]["chunk"].content
-                if chunk:
-                    yield f"data: {json.dumps({'text': chunk})}\n\n"
-        yield "data: [DONE]\n\n"
-
-    return StreamingResponse(stream_response(), media_type="text/event-stream")
+bui
