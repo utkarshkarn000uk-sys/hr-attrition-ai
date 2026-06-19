@@ -28,9 +28,7 @@ export default function Chat() {
     setInput('');
     setMessages(prev => [...prev, { role: 'user', text: msg }]);
     setLoading(true);
-
-    const aiMsg = { role: 'ai', text: '' };
-    setMessages(prev => [...prev, aiMsg]);
+    setMessages(prev => [...prev, { role: 'ai', text: '🤔 Thinking...' }]);
 
     try {
       const resp = await fetch(`${API}/chat`, {
@@ -39,36 +37,23 @@ export default function Chat() {
         body: JSON.stringify({ message: msg, session_id: SESSION.current })
       });
 
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
+      const data = await resp.json();
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const lines = decoder.decode(value).split('\n');
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          const data = line.slice(6);
-          if (data === '[DONE]') break;
-          try {
-            const chunk = JSON.parse(data).text;
-            setMessages(prev => {
-              const updated = [...prev];
-              updated[updated.length - 1] = {
-                ...updated[updated.length - 1],
-                text: updated[updated.length - 1].text + chunk
-              };
-              return updated;
-            });
-          } catch(e) {}
-        }
-      }
+      setMessages(prev => {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          role: 'ai',
+          text: data.response
+        };
+        return updated;
+      });
+
     } catch(e) {
       setMessages(prev => {
         const updated = [...prev];
         updated[updated.length - 1] = {
           role: 'ai',
-          text: 'Backend is waking up. Please wait 30 seconds and try again!'
+          text: 'Error connecting to backend. Please try again!'
         };
         return updated;
       });
@@ -98,7 +83,7 @@ export default function Chat() {
               background: msg.role === 'user' ? '#7c83fd' : 'white',
               color: msg.role === 'user' ? 'white' : '#333',
             }}>
-              {msg.text || (loading && i === messages.length - 1 ? '...' : '')}
+              {msg.text}
             </div>
           ))}
           <div ref={bottomRef} />

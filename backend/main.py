@@ -216,4 +216,27 @@ def should_continue(state: ChatState) -> str:
     return END
 
 builder = StateGraph(ChatState)
-bui
+builder.add_node("agent", agent_node)
+builder.add_node("tools", tool_node)
+builder.add_edge(START, "agent")
+builder.add_conditional_edges("agent", should_continue)
+builder.add_edge("tools", "agent")
+
+checkpointer = InMemorySaver()
+graph = builder.compile(checkpointer=checkpointer)
+
+class ChatRequest(BaseModel):
+    message: str
+    session_id: str = "default"
+
+@app.post("/chat")
+async def chat(req: ChatRequest):
+    config = {"configurable": {"thread_id": req.session_id}}
+    
+    result = graph.invoke(
+        {"messages": [("user", req.message)]},
+        config=config,
+    )
+    
+    response_text = result["messages"][-1].content
+    return {"response": response_text}
