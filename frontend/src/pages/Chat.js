@@ -63,15 +63,16 @@ export default function Chat() {
           } catch(e) {}
         }
       }
-    } catch(e) {
-      setMessages(prev => {
-        const updated = [...prev];
-        updated[updated.length - 1] = { role: 'ai', text: 'Error connecting to backend. Make sure FastAPI is running!' };
-        return updated;
-      });
-    }
-    setLoading(false);
-  };
+ } catch(e) {
+  setMessages(prev => {
+    const updated = [...prev];
+    updated[updated.length - 1] = { 
+      role: 'ai', 
+      text: 'Backend is waking up — this takes 30-60 seconds on first use. Please try again in a moment!' 
+    };
+    return updated;
+  });
+}
 
   return (
     <div style={styles.page}>
