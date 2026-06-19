@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-const API = 'http://127.0.0.1:8000';
+const API = 'https://hr-attrition-ai-backend.onrender.com';
 
 const SUGGESTIONS = [
   "How many employees are high risk?",
@@ -63,23 +63,24 @@ export default function Chat() {
           } catch(e) {}
         }
       }
- } catch(e) {
-  setMessages(prev => {
-    const updated = [...prev];
-    updated[updated.length - 1] = { 
-      role: 'ai', 
-      text: 'Backend is waking up — this takes 30-60 seconds on first use. Please try again in a moment!' 
-    };
-    return updated;
-  });
-}
+    } catch(e) {
+      setMessages(prev => {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          role: 'ai',
+          text: 'Backend is waking up. Please wait 30 seconds and try again!'
+        };
+        return updated;
+      });
+    }
+    setLoading(false);
+  };
 
   return (
     <div style={styles.page}>
       <h1 style={styles.title}>AI HR Assistant</h1>
       <p style={styles.subtitle}>Ask questions about employee attrition in natural language</p>
 
-      {/* Suggestion buttons */}
       <div style={styles.suggestions}>
         {SUGGESTIONS.map((s, i) => (
           <button key={i} style={styles.suggBtn} onClick={() => send(s)}>
@@ -88,7 +89,6 @@ export default function Chat() {
         ))}
       </div>
 
-      {/* Chat box */}
       <div style={styles.chatBox}>
         <div style={styles.messages}>
           {messages.map((msg, i) => (
@@ -104,7 +104,6 @@ export default function Chat() {
           <div ref={bottomRef} />
         </div>
 
-        {/* Input */}
         <div style={styles.inputRow}>
           <input
             style={styles.input}
@@ -135,7 +134,7 @@ const styles = {
   suggBtn: {
     padding: '6px 14px', background: '#7c83fd22', color: '#7c83fd',
     border: '1px solid #7c83fd44', borderRadius: '999px', fontSize: '12px',
-    cursor: 'pointer', transition: 'all 0.2s'
+    cursor: 'pointer'
   },
   chatBox: {
     background: 'white', borderRadius: '12px',
