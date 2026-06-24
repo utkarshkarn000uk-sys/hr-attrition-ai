@@ -19,8 +19,7 @@ from langchain_core.messages import SystemMessage
 from dotenv import load_dotenv
 
 load_dotenv(r"C:\Users\admin\attrition-project\backend\.env")
-os.environ["GROQ_API_KEY"] = "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"
-
+os.environ["GROQ_API_KEY"] = os.getenv("GROQ_API_KEY", "")
 print("Loading ML model...")
 model = joblib.load("model.pkl")
 feature_names = joblib.load("feature_names.pkl")
