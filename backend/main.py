@@ -18,20 +18,9 @@ from langgraph.prebuilt import ToolNode
 from langchain_core.messages import SystemMessage
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(r"C:\Users\admin\attrition-project\backend\.env")
+os.environ["GROQ_API_KEY"] = "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"
 
-# ── FastAPI app FIRST ─────────────────────────────────────────
-app = FastAPI(title="HR AttritionAI API")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
-)
-
-# ── Load ML model and data ────────────────────────────────────
 print("Loading ML model...")
 model = joblib.load("model.pkl")
 feature_names = joblib.load("feature_names.pkl")
@@ -48,12 +37,21 @@ df['RiskLevel'] = pd.cut(df['RiskScore'],
                           labels=['Low','Medium','High'])
 print("Risk scores calculated for all employees!")
 
-# ── Routes ────────────────────────────────────────────────────
-@app.get("/")
+app = FastAPI(title="HR AttritionAI API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"],
+    allow_headers=["*"],
+)
+
+@app.api_route("/", methods=["GET", "HEAD"])
 def home():
     return {"message": "HR AttritionAI API running!"}
 
-@app.get("/stats")
+@app.api_route("/stats", methods=["GET", "HEAD"])
 def get_stats():
     return {
         "total_employees": len(df),
@@ -158,7 +156,6 @@ def predict(req: PredictRequest):
         "recommendation": recommendation
     }
 
-# ── LangGraph Chatbot ─────────────────────────────────────────
 llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.7)
 
 @tool
@@ -202,7 +199,6 @@ class ChatState(TypedDict):
 
 def agent_node(state: ChatState) -> dict:
     messages = [SystemMessage(content="""You are an expert HR analytics AI assistant.
-You have access to employee attrition data and ML predictions.
 Use tools to answer questions about employee risk and retention.
 Always be specific with numbers and percentages.""")] + state["messages"]
     response = llm_with_tools.invoke(messages)
@@ -232,11 +228,8 @@ class ChatRequest(BaseModel):
 @app.post("/chat")
 async def chat(req: ChatRequest):
     config = {"configurable": {"thread_id": req.session_id}}
-    
     result = graph.invoke(
         {"messages": [("user", req.message)]},
-        config=config,
+        config=config
     )
-    
-    response_text = result["messages"][-1].content
-    return {"response": response_text}
+    return {"response": result["messages"][-1].content}
